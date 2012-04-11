@@ -6,6 +6,6 @@ S3Agent :
 
 Caveats :
   * Doesn't (yet) run the event loop. I developed this when I was working on a Thin based app server. Future versions may have support for running an event loop.
-  * Works only for get_object and put_object
+  * Works only for get_object and put_object. More methods coming soon.
   * Do not define errbacks on instances of S3Interface. It uses errbacks to retry and __always__ succeeds with an error code.
   * Feel free to fork and modify.
