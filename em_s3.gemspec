@@ -4,9 +4,9 @@ require File.expand_path('../lib/em_s3/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Paul Victor Raj"]
   gem.email         = ["paulvictor@gmail.com"]
-  gem.description   = %q{Paul Victor Raj}
-  gem.summary       = %q{Enables evented access to S3 get and put interface}
-  gem.homepage      = ""
+  gem.summary       = "Enables evented access to S3 get and put interface"
+  gem.description = gem.summary
+  gem.homepage      = "http://github.com/paulvictor/em_s3"
 
   gem.add_dependency('em-http-request', '>=1.0.2')
 
