@@ -82,7 +82,7 @@ class S3Interface
 
   private
 
-  # Perhaps an inappropriate method name, sonce we call it even the first time
+  # Perhaps an inappropriate method name, since we call it even the first time
   def retry_request
     # Explore persistent connections from within AWS
     s3_conn = EM::HttpRequest.new("http://#{@bucket}.s3.amazonaws.com")
@@ -90,6 +90,7 @@ class S3Interface
     s3_req = s3_conn.send(req_method, @req_options)
     s3_req.callback{|cli|
       if cli.response_header.http_status < 500
+        @cb.call resp, status if @cb
         self.succeed cli.response, cli.response_header.http_status
       else # Some S3 issue
         self.fail cli.response, cli.response_header.http_status
