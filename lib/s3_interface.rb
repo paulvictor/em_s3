@@ -90,7 +90,7 @@ class S3Interface
     s3_req = s3_conn.send(req_method, @req_options)
     s3_req.callback{|cli|
       if cli.response_header.http_status < 500
-        @cb.call resp, status if @cb
+        @cb.call cli.response, cli.response_header.http_status if @cb
         self.succeed cli.response, cli.response_header.http_status
       else # Some S3 issue
         self.fail cli.response, cli.response_header.http_status
