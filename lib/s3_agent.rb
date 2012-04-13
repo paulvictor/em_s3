@@ -46,7 +46,7 @@ class S3Agent
     q = (@obj_pools["#{params[:bucket]}:#{params[:object]}"] ||= EM::Queue.new)
     q.push({:method => method, :params => params})
     q.pop{|request|
-      s3i = S3Interface.new
+      s3i = S3Interface.new(@public_key, @private_key)
       s3i.send(method, params)
     }
   end
