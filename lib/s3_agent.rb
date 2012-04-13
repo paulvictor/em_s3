@@ -1,4 +1,4 @@
-class S3Agent < EM::Queue
+class S3Agent
   include Singleton
   # Refer to http://eventmachine.rubyforge.org/EventMachine/Queue.html for interface details
   # This agent class solves the following problem
@@ -11,6 +11,10 @@ class S3Agent < EM::Queue
   def initialize
     @public_key = nil
     @private_key = nil
+    setup
+  end
+
+  def setup
     @obj_pools = {}
   end
 
@@ -18,17 +22,6 @@ class S3Agent < EM::Queue
     @public_key ||= public_key
     @private_key ||= private_key
     self
-  end
-
-  # Called from clients if due to some reason, they skip over the write part
-  # @param [String] bucket
-  #   The name of the bucket
-  # @param [String] object
-  #   The name of the object's key
-  # @return [true]
-  def revoke_service(bucket, object)
-    @obj_pools.delete("#{bucket}:#{object}")
-    true
   end
 
   # Requests any of :get or :put from S3.
@@ -43,27 +36,18 @@ class S3Agent < EM::Queue
   # @param [String] value
   #   The object's value
   # @return [true]
-  def request_service(method, bucket, object, value = nil, &blk)
-    # Allow `put`s to go through.
-    # For `get`s, check if the object is not in use and only then, allow to pass though
-    if (!@obj_pools["#{bucket}:#{object}"]) || (method == :put)
-      # Some client is using the agent.
-      @obj_pools["#{bucket}:#{object}"] = true
-      s3i = S3Interface.new(@public_key, @private_key)
-      s3i.callback{|resp, status|
-        # Unblock the other client only if this is a write
-        revoke_service(bucket, object) if method == :put
-        yield resp, status if block_given?
-      }
-      method == :get ? s3i.get_object(bucket, object) : s3i.put_object(bucket, object, value)
-    else
-      push({:bucket => bucket, :object => object, :value => value})
-      pop{|request|
-        request_service(request[:bucket], request[:object], request[:value]){|resp, status|
-          yield resp, status if block_given?
-        }
-      }
-    end
-    true
+  def request_service(method, *args)
+    setup
+    self.send(method.to_sym, *args)
+  end
+
+  def method_missing(method, *args)
+    params = args[0]
+    q = (@obj_pools["#{params[:bucket]}:#{params[:object]}"] ||= EM::Queue.new)
+    q.push({:method => method, :params => params})
+    q.pop{|request|
+      s3i = S3Interface.new
+      s3i.send(method, params)
+    }
   end
 end

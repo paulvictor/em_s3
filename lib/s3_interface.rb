@@ -19,6 +19,7 @@ class S3Interface
       if (@num_tries += 1) < retry_count
         retry_request
       else
+        @cb.call resp, status if @cb
         succeed resp, status
       end
     }
@@ -34,7 +35,12 @@ class S3Interface
   # @param [String] content_type
   #   The value's MIME type
   # @return [self]
-  def put_object(bucket, object, value, content_type = 'binary/octet-stream')
+  def put(params)
+    bucket = params[:bucket]
+    object = params[:object]
+    value = params[:value]
+    content_type = params[:content_type]
+    cb = params[:cb]
     date = generate_date
     sign_string = generate_signed_string('PUT', 'private', bucket, object, content_type)
     signature = generate_signature(sign_string)
@@ -43,6 +49,7 @@ class S3Interface
     path = "/" << object
 
     @req_options = {:method => :put, :head => headers, :path => path, :body => value}
+    @cb = cb if cb
     @bucket = bucket
     try_request
     self
@@ -54,7 +61,11 @@ class S3Interface
   # @param [String] object
   #   The name of the object's key
   # @return [self]
-  def get_object(bucket, object)
+  def get(params)
+    bucket = params[:bucket]
+    object = params[:object]
+    content_type = params[:content_type]
+    cb = params[:cb]
     date = generate_date
     sign_string = generate_signed_string('GET', nil, bucket, object, 'text/plain')
     signature = generate_signature(sign_string)
@@ -63,6 +74,7 @@ class S3Interface
     path = "/" << object
 
     @req_options = {:method => :get, :head => headers, :path => path}
+    @cb = cb if cb
     @bucket = bucket
     try_request
     self
