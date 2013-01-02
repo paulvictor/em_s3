@@ -55,6 +55,37 @@ class S3Interface
     self
   end
 
+  def list(params)
+    bucket = params[:bucket]
+    cb = params[:cb]
+    date = generate_date
+    sign_string = generate_signed_string('GET', nil, bucket, nil, 'text/plain')
+    signature = generate_signature(sign_string)
+    auth = generate_auth(signature)
+    headers = generate_get_headers(date, auth, 'text/plain')
+    path = "/"
+    @req_options = {:method => :get, :head => headers, :path => path}
+    @cb = cb if cb
+    @bucket = bucket
+    try_request
+    self
+  end
+
+  def delete(params)
+    bucket = params[:bucket]
+    object = params[:object]
+    cb = params[:cb]
+    date = generate_date
+    sign_string = generate_signed_string('DELETE', nil, bucket, object, 'text/plain')
+    signature = generate_signature(sign_string)
+    auth = generate_auth(signature)
+    headers = generate_get_headers(date, auth, 'text/plain')
+    path = "/" << object
+    @req_options = {:method => :delete, :head => headers, :path => path}
+    @cb = cb if cb
+    @bucket = bucket
+    try_request
+  end
   # Gets any of the objects from S3 buckets
   # @param [String] bucket
   #   The name of the bucket
@@ -117,7 +148,9 @@ class S3Interface
     end
     signed_string << generate_date << "\n"
     signed_string << "x-amz-acl:" << access << "\n" if access
-    signed_string << "/" << bucket << "/" << object
+    signed_string << "/" << bucket << "/"
+    signed_string <<  object if object
+    signed_string
   end
 
   def generate_signature(signed_string)
